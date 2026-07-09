@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import type { DetectionObject } from "../types";
 
 type MatrixTerminalProps = {
@@ -41,6 +40,61 @@ function randomMatrixLine() {
     return line;
 }
 
+function createStartLines(object: DetectionObject) {
+    return [
+        "╔══════════════════════════════════════════════════════╗",
+        "║              OBJECT LOCALIZATION STARTED             ║",
+        "╚══════════════════════════════════════════════════════╝",
+        `> selected object: ${object.class_name}`,
+        `> confidence: ${(object.confidence * 100).toFixed(1)}%`,
+        `> image center: x=${object.center.x}, y=${object.center.y}`,
+        "> calculating robot arm target coordinates...",
+        `> progress ${createProgressBar(0)} 0%`,
+        `> scanning matrix: ${randomMatrixLine()}`,
+        "> estimated arm position x=--- y=--- z=---",
+    ];
+}
+
+function createRunningLines(
+    object: DetectionObject,
+    coordinates: ArmCoordinates,
+    progress: number
+) {
+    return [
+        "╔══════════════════════════════════════════════════════╗",
+        "║              OBJECT LOCALIZATION STARTED             ║",
+        "╚══════════════════════════════════════════════════════╝",
+        `> selected object: ${object.class_name}`,
+        `> confidence: ${(object.confidence * 100).toFixed(1)}%`,
+        `> image center: x=${object.center.x}, y=${object.center.y}`,
+        "> calculating robot arm target coordinates...",
+        `> progress ${createProgressBar(progress)} ${progress}%`,
+        `> scanning matrix: ${randomMatrixLine()}`,
+        `> estimated arm position x=${coordinates.x} y=${coordinates.y} z=${coordinates.z}`,
+    ];
+}
+
+function createFinishedLines(
+    object: DetectionObject,
+    coordinates: ArmCoordinates
+) {
+    return [
+        "╔══════════════════════════════════════════════════════╗",
+        "║              OBJECT LOCALIZATION COMPLETE            ║",
+        "╚══════════════════════════════════════════════════════╝",
+        `> selected object: ${object.class_name}`,
+        `> confidence: ${(object.confidence * 100).toFixed(1)}%`,
+        `> image center: x=${object.center.x}, y=${object.center.y}`,
+        `> progress ${createProgressBar(100)} 100%`,
+        "> bounding box confirmed",
+        "> target locked",
+        `> arm target x=${coordinates.x}mm y=${coordinates.y}mm z=${coordinates.z}mm`,
+        `> gripper rotation=${coordinates.rotation}deg`,
+        "> ready for kinematics module",
+        "> awaiting movement confirmation...",
+    ];
+}
+
 export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
     const [progress, setProgress] = useState(0);
     const [armCoordinates, setArmCoordinates] = useState<ArmCoordinates | null>(null);
@@ -74,16 +128,7 @@ export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
         const coordinates = createArmCoordinates(selectedObject);
         setArmCoordinates(coordinates);
         setProgress(0);
-
-        setLines([
-            "╔══════════════════════════════════════════════════════╗",
-            "║              OBJECT LOCALIZATION STARTED             ║",
-            "╚══════════════════════════════════════════════════════╝",
-            `> selected object: ${selectedObject.class_name}`,
-            `> confidence: ${(selectedObject.confidence * 100).toFixed(1)}%`,
-            `> image center: x=${selectedObject.center.x}, y=${selectedObject.center.y}`,
-            "> calculating robot arm target coordinates...",
-        ]);
+        setLines(createStartLines(selectedObject));
 
         let currentProgress = 0;
 
@@ -94,26 +139,13 @@ export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
                 currentProgress = 100;
                 window.clearInterval(interval);
 
-                setLines((oldLines) => [
-                    ...oldLines,
-                    `> progress ${createProgressBar(100)} 100%`,
-                    "> bounding box confirmed",
-                    "> target locked",
-                    `> arm target x=${coordinates.x}mm y=${coordinates.y}mm z=${coordinates.z}mm`,
-                    `> gripper rotation=${coordinates.rotation}deg`,
-                    "> ready for kinematics module",
-                    "> awaiting movement confirmation...",
-                ]);
-            } else {
-                setLines((oldLines) => [
-                    ...oldLines,
-                    `> progress ${createProgressBar(currentProgress)} ${currentProgress}%`,
-                    `> scanning matrix: ${randomMatrixLine()}`,
-                    `> estimated arm position x=${coordinates.x} y=${coordinates.y} z=${coordinates.z}`,
-                ]);
+                setProgress(100);
+                setLines(createFinishedLines(selectedObject, coordinates));
+                return;
             }
 
             setProgress(currentProgress);
+            setLines(createRunningLines(selectedObject, coordinates, currentProgress));
         }, 180);
 
         return () => window.clearInterval(interval);
@@ -140,22 +172,6 @@ export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
                 </div>
 
                 <div className="terminal-progress-panel">
-                    <div className="progress-label">
-                        <span>Detection Progress</span>
-                        <span>{progress}%</span>
-                    </div>
-
-                    <div className="progress-track">
-                        <div
-                            className="progress-fill"
-                            style={{ "--progress": `${progress}%` } as CSSProperties}
-                        ></div>
-                    </div>
-
-                    <pre className="ascii-progress">
-{createProgressBar(progress)}
-                    </pre>
-
                     <div className="target-box">
                         <strong>
                             {selectedObject ? selectedObject.class_name : "No target selected"}
@@ -163,8 +179,12 @@ export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
 
                         {selectedObject && armCoordinates ? (
                             <>
-                                <span>Confidence: {(selectedObject.confidence * 100).toFixed(1)}%</span>
-                                <span>Image Center: X {selectedObject.center.x} / Y {selectedObject.center.y}</span>
+                                <span>
+                                    Confidence: {(selectedObject.confidence * 100).toFixed(1)}%
+                                </span>
+                                <span>
+                                    Image Center: X {selectedObject.center.x} / Y {selectedObject.center.y}
+                                </span>
                                 <span>Arm X: {armCoordinates.x} mm</span>
                                 <span>Arm Y: {armCoordinates.y} mm</span>
                                 <span>Arm Z: {armCoordinates.z} mm</span>

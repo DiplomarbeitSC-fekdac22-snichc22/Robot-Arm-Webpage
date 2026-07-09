@@ -24,7 +24,7 @@ export const Navbar = ({ twoCameraMode, onToggleCameraMode }: NavbarProps)=> {
                 </span>
             </div>
 
-            <img className="navbar-logo" src="/logo.png" alt="PIA Automation logo" />
+            <img className="navbar-logo" src="/logo.svg" alt="PIA Automation logo" />
         </header>
     );
 }

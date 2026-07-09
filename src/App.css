@@ -143,7 +143,7 @@ button {
   min-width: 0;
   height: 100vh;
   display: grid;
-  grid-template-rows: 86px minmax(0, 1fr) 260px;
+  grid-template-rows: 86px minmax(0, 1fr) 340px;
   overflow: hidden;
 }
 
@@ -293,11 +293,11 @@ button {
   border-radius: 18px;
   overflow: hidden;
   background: #020805;
-  border: 1px solid rgba(42, 160, 135, 0.48);
+  border: 1px solid rgba(0, 255, 136, 0.35);
   box-shadow:
-          0 0 0 1px rgba(42, 160, 135, 0.18),
-          0 14px 34px rgba(13, 24, 36, 0.28),
-          inset 0 0 40px rgba(0, 255, 136, 0.05);
+          0 0 0 1px rgba(0, 255, 136, 0.12),
+          0 14px 34px rgba(13, 24, 36, 0.35),
+          inset 0 0 45px rgba(0, 255, 136, 0.06);
   position: relative;
 }
 
@@ -308,7 +308,7 @@ button {
   background:
           linear-gradient(
                   rgba(255, 255, 255, 0.025) 50%,
-                  rgba(0, 0, 0, 0.09) 50%
+                  rgba(0, 0, 0, 0.1) 50%
           );
   background-size: 100% 4px;
   pointer-events: none;
@@ -325,7 +325,7 @@ button {
   background: linear-gradient(
           to bottom,
           transparent,
-          rgba(42, 160, 135, 0.15),
+          rgba(0, 255, 136, 0.13),
           transparent
   );
   animation: terminalScan 4s linear infinite;
@@ -334,15 +334,18 @@ button {
 }
 
 .terminal-header {
-  height: 48px;
+  height: 44px;
   padding: 0 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(90deg, var(--pia-navy), var(--pia-teal));
-  color: white;
+  background: #020805;
+  color: var(--matrix-green);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.35);
+  font-family: "Courier New", monospace;
   font-weight: bold;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.85);
   position: relative;
   z-index: 4;
 }
@@ -358,66 +361,78 @@ button {
   height: 11px;
   border-radius: 50%;
   background: var(--matrix-green);
-  box-shadow: 0 0 12px var(--matrix-green);
+  box-shadow: 0 0 14px var(--matrix-green);
   animation: pulseDot 1.1s infinite;
 }
 
 .terminal-body {
-  height: calc(100% - 48px);
+  height: calc(100% - 44px);
   display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 18px;
-  padding: 18px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+  padding: 16px;
   position: relative;
   z-index: 4;
 }
 
 .terminal-content {
   min-height: 0;
+  max-height: 100%;
   padding: 16px;
-  border-radius: 14px;
-  background:
-          radial-gradient(circle at top left, rgba(0, 255, 136, 0.12), transparent 35%),
-          #020805;
-  border: 1px solid rgba(0, 255, 136, 0.24);
+  border-radius: 12px;
+  background: #000000;
+  border: 1px solid rgba(0, 255, 136, 0.26);
   color: var(--matrix-green);
   font-family: "Courier New", monospace;
-  font-size: 15px;
-  line-height: 1.55;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.7);
-  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.75);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.terminal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal-content::-webkit-scrollbar-track {
+  background: #020805;
+}
+
+.terminal-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.45);
+  border-radius: 999px;
 }
 
 .terminal-line {
-  animation: lineEnter 0.22s ease both;
-}
-
-.terminal-line.dim {
-  color: rgba(0, 255, 136, 0.65);
+  white-space: pre-wrap;
+  animation: terminalLineEnter 0.18s ease both;
 }
 
 .terminal-progress-panel {
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 16px;
-  background:
-          linear-gradient(180deg, rgba(27, 54, 81, 0.96), rgba(13, 24, 36, 0.98));
-  border: 1px solid rgba(42, 160, 135, 0.48);
-  color: white;
-  box-shadow: inset 0 0 25px rgba(0, 255, 136, 0.05);
+  background: #000000;
+  border: 1px solid rgba(0, 255, 136, 0.26);
+  color: var(--matrix-green);
+  font-family: "Courier New", monospace;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.75);
+  overflow: hidden;
 }
 
 .progress-label {
   display: flex;
   justify-content: space-between;
   margin-bottom: 12px;
-  color: white;
+  color: var(--matrix-green);
   font-weight: bold;
 }
 
 .progress-track {
-  height: 20px;
+  height: 18px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.48);
+  background: rgba(0, 255, 136, 0.08);
   border: 1px solid rgba(0, 255, 136, 0.35);
   overflow: hidden;
   position: relative;
@@ -432,7 +447,7 @@ button {
           var(--pia-teal),
           var(--matrix-green)
   );
-  box-shadow: 0 0 18px rgba(0, 255, 136, 0.76);
+  box-shadow: 0 0 18px rgba(0, 255, 136, 0.85);
   transition: width 0.22s ease;
   position: relative;
 }
@@ -444,52 +459,45 @@ button {
   background: linear-gradient(
           120deg,
           transparent,
-          rgba(255, 255, 255, 0.75),
+          rgba(255, 255, 255, 0.8),
           transparent
   );
-  animation: progressShimmer 1.1s infinite;
+  animation: progressShimmer 1s infinite;
 }
 
-.loading-text {
-  margin-top: 14px;
+.ascii-progress {
+  margin: 14px 0 0 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid rgba(0, 255, 136, 0.2);
   color: var(--matrix-green);
   font-family: "Courier New", monospace;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.72);
-  min-height: 22px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.75);
+  overflow: hidden;
 }
 
 .target-box {
-  margin-top: 16px;
-  padding: 14px;
+  margin-top: 14px;
+  padding: 13px;
   border-radius: 12px;
-  background: rgba(2, 8, 5, 0.72);
-  border: 1px solid rgba(0, 255, 136, 0.28);
+  background: rgba(0, 255, 136, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.23);
 }
 
 .target-box strong {
   color: var(--matrix-green);
-  font-size: 18px;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.7);
+  font-size: 17px;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.85);
 }
 
 .target-box span {
   display: block;
   margin-top: 6px;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 14px;
-}
-
-.matrix-code {
-  margin-top: 14px;
-  padding: 10px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.32);
-  color: rgba(0, 255, 136, 0.72);
-  font-family: "Courier New", monospace;
+  color: rgba(0, 255, 136, 0.8);
   font-size: 13px;
-  line-height: 1.45;
-  height: 72px;
-  overflow: hidden;
 }
 
 /* Animations */
@@ -521,7 +529,7 @@ button {
   }
 }
 
-@keyframes lineEnter {
+@keyframes terminalLineEnter {
   from {
     opacity: 0;
     transform: translateY(5px);

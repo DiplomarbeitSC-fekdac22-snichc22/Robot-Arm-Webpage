@@ -3,12 +3,26 @@ type NavbarProps = {
     onToggleCameraMode: () => void;
 };
 
-export const Navbar =  ({ twoCameraMode, onToggleCameraMode }: NavbarProps) => {
+export const Navbar = ({ twoCameraMode, onToggleCameraMode }: NavbarProps)=> {
     return (
         <header className="navbar">
-            <button className="toggle-button" onClick={onToggleCameraMode}>
-                {twoCameraMode ? "Toggle 2 Images → 1 Image" : "Toggle 1 Image → 2 Images"}
-            </button>
+            <div className="camera-toggle-wrapper">
+                <span className={!twoCameraMode ? "toggle-label active" : "toggle-label"}>
+                    1 Camera
+                </span>
+
+                <button
+                    className={twoCameraMode ? "apple-toggle active" : "apple-toggle"}
+                    onClick={onToggleCameraMode}
+                    aria-label="Toggle camera mode"
+                >
+                    <span className="apple-toggle-knob"></span>
+                </button>
+
+                <span className={twoCameraMode ? "toggle-label active" : "toggle-label"}>
+                    2 Cameras
+                </span>
+            </div>
 
             <img className="navbar-logo" src="/logo.png" alt="PIA Automation logo" />
         </header>

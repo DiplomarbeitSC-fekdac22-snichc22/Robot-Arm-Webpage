@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import type { DetectionObject } from "../types";
 
 type MatrixTerminalProps = {
@@ -11,6 +12,41 @@ type ArmCoordinates = {
     z: number;
     rotation: number;
 };
+
+type LogTone = "default" | "dim" | "accent";
+
+type LogEntry = {
+    id: number;
+    text: string;
+    tone: LogTone;
+};
+
+let logEntrySequence = 0;
+
+function nextLogId() {
+    logEntrySequence += 1;
+    return logEntrySequence;
+}
+
+function timestamp() {
+    const now = new Date();
+    const time = now.toTimeString().slice(0, 8);
+    const ms = String(now.getMilliseconds()).padStart(3, "0");
+    return `${time}.${ms}`;
+}
+
+function logLine(
+    level: "INFO" | "DEBUG" | "WARN",
+    module: string,
+    message: string,
+    tone: LogTone = "default"
+): LogEntry {
+    return {
+        id: nextLogId(),
+        text: `[${timestamp()}] ${level.padEnd(5)} ${module}: ${message}`,
+        tone,
+    };
+}
 
 function createArmCoordinates(object: DetectionObject): ArmCoordinates {
     return {
@@ -29,84 +65,15 @@ function createProgressBar(progress: number) {
     return `[${"#".repeat(filled)}${"-".repeat(empty)}]`;
 }
 
-function randomMatrixLine() {
-    const chars = "01#@$%&XYZ";
-    let line = "";
-
-    for (let i = 0; i < 46; i++) {
-        line += chars[Math.floor(Math.random() * chars.length)];
-    }
-
-    return line;
-}
-
-function createStartLines(object: DetectionObject) {
-    return [
-        "╔══════════════════════════════════════════════════════╗",
-        "║              OBJECT LOCALIZATION STARTED             ║",
-        "╚══════════════════════════════════════════════════════╝",
-        `> selected object: ${object.class_name}`,
-        `> confidence: ${(object.confidence * 100).toFixed(1)}%`,
-        `> image center: x=${object.center.x}, y=${object.center.y}`,
-        "> calculating robot arm target coordinates...",
-        `> progress ${createProgressBar(0)} 0%`,
-        `> scanning matrix: ${randomMatrixLine()}`,
-        "> estimated arm position x=--- y=--- z=---",
-    ];
-}
-
-function createRunningLines(
-    object: DetectionObject,
-    coordinates: ArmCoordinates,
-    progress: number
-) {
-    return [
-        "╔══════════════════════════════════════════════════════╗",
-        "║              OBJECT LOCALIZATION STARTED             ║",
-        "╚══════════════════════════════════════════════════════╝",
-        `> selected object: ${object.class_name}`,
-        `> confidence: ${(object.confidence * 100).toFixed(1)}%`,
-        `> image center: x=${object.center.x}, y=${object.center.y}`,
-        "> calculating robot arm target coordinates...",
-        `> progress ${createProgressBar(progress)} ${progress}%`,
-        `> scanning matrix: ${randomMatrixLine()}`,
-        `> estimated arm position x=${coordinates.x} y=${coordinates.y} z=${coordinates.z}`,
-    ];
-}
-
-function createFinishedLines(
-    object: DetectionObject,
-    coordinates: ArmCoordinates
-) {
-    return [
-        "╔══════════════════════════════════════════════════════╗",
-        "║              OBJECT LOCALIZATION COMPLETE            ║",
-        "╚══════════════════════════════════════════════════════╝",
-        `> selected object: ${object.class_name}`,
-        `> confidence: ${(object.confidence * 100).toFixed(1)}%`,
-        `> image center: x=${object.center.x}, y=${object.center.y}`,
-        `> progress ${createProgressBar(100)} 100%`,
-        "> bounding box confirmed",
-        "> target locked",
-        `> arm target x=${coordinates.x}mm y=${coordinates.y}mm z=${coordinates.z}mm`,
-        `> gripper rotation=${coordinates.rotation}deg`,
-        "> ready for kinematics module",
-        "> awaiting movement confirmation...",
-    ];
-}
-
 export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
     const [progress, setProgress] = useState(0);
     const [armCoordinates, setArmCoordinates] = useState<ArmCoordinates | null>(null);
-    const [lines, setLines] = useState<string[]>([
-        "╔══════════════════════════════════════════════════════╗",
-        "║              PIA VISION TERMINAL v1.0                ║",
-        "╚══════════════════════════════════════════════════════╝",
-        "> system boot complete",
-        "> camera stream online",
-        "> yolo model ready",
-        "> waiting for object selection...",
+    const [logLines, setLogLines] = useState<LogEntry[]>(() => [
+        logLine("INFO", "system", "boot complete"),
+        logLine("INFO", "camera", "stream online"),
+        logLine("INFO", "yolo", "model loaded, ready for inference"),
     ]);
+    const [statusLine, setStatusLine] = useState<string | null>(null);
 
     const terminalContentRef = useRef<HTMLDivElement | null>(null);
 
@@ -116,36 +83,97 @@ export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
         }
 
         terminalContentRef.current.scrollTop = terminalContentRef.current.scrollHeight;
-    }, [lines]);
+    }, [logLines, statusLine]);
 
     useEffect(() => {
         if (!selectedObject) {
             setProgress(0);
             setArmCoordinates(null);
+            setStatusLine(null);
             return;
         }
 
         const coordinates = createArmCoordinates(selectedObject);
         setArmCoordinates(coordinates);
         setProgress(0);
-        setLines(createStartLines(selectedObject));
+
+        setLogLines((prev) => [
+            ...prev,
+            logLine(
+                "INFO",
+                "pipeline",
+                `localization started for "${selectedObject.class_name}"`
+            ),
+            logLine(
+                "INFO",
+                "detector",
+                `object=${selectedObject.class_name} confidence=${(selectedObject.confidence * 100).toFixed(1)}%`
+            ),
+            logLine(
+                "DEBUG",
+                "detector",
+                `bbox_center=(${selectedObject.center.x}, ${selectedObject.center.y})`,
+                "dim"
+            ),
+            logLine("INFO", "kinematics", "solving inverse kinematics for target pose"),
+        ]);
 
         let currentProgress = 0;
+        let iteration = 0;
+        const startResidual = 0.4 + Math.random() * 0.3;
+
+        setStatusLine(`${createProgressBar(0)} 0%`);
 
         const interval = window.setInterval(() => {
-            currentProgress += Math.floor(Math.random() * 6) + 2;
+            currentProgress = Math.min(100, currentProgress + Math.floor(Math.random() * 6) + 2);
+            iteration += 1;
 
             if (currentProgress >= 100) {
-                currentProgress = 100;
                 window.clearInterval(interval);
 
                 setProgress(100);
-                setLines(createFinishedLines(selectedObject, coordinates));
+                setStatusLine(null);
+                setLogLines((prev) => [
+                    ...prev,
+                    logLine(
+                        "INFO",
+                        "kinematics",
+                        `converged after ${iteration} iterations (residual < 1e-3)`,
+                        "accent"
+                    ),
+                    logLine(
+                        "INFO",
+                        "kinematics",
+                        `arm_target=(${coordinates.x}, ${coordinates.y}, ${coordinates.z}) mm`,
+                        "accent"
+                    ),
+                    logLine("INFO", "kinematics", `gripper_rotation=${coordinates.rotation}deg`),
+                    logLine(
+                        "INFO",
+                        "planner",
+                        "trajectory ready, awaiting movement confirmation",
+                        "accent"
+                    ),
+                ]);
                 return;
             }
 
             setProgress(currentProgress);
-            setLines(createRunningLines(selectedObject, coordinates, currentProgress));
+
+            if (iteration % 3 === 0) {
+                const residual = startResidual * (1 - currentProgress / 100);
+                setLogLines((prev) => [
+                    ...prev,
+                    logLine(
+                        "DEBUG",
+                        "kinematics",
+                        `iteration ${iteration}, residual=${residual.toFixed(4)}`,
+                        "dim"
+                    ),
+                ]);
+            }
+
+            setStatusLine(`${createProgressBar(currentProgress)} ${currentProgress}%`);
         }, 180);
 
         return () => window.clearInterval(interval);
@@ -155,7 +183,6 @@ export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
         <section className="terminal">
             <div className="terminal-header">
                 <div className="terminal-title">
-                    <span className="terminal-dot"></span>
                     <span>VISION TERMINAL</span>
                 </div>
 
@@ -164,14 +191,34 @@ export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
 
             <div className="terminal-body">
                 <div className="terminal-content" ref={terminalContentRef}>
-                    {lines.map((line, index) => (
-                        <div key={`${line}-${index}`} className="terminal-line">
-                            {line}
+                    {logLines.map((line) => (
+                        <div
+                            key={line.id}
+                            className={
+                                line.tone === "default"
+                                    ? "terminal-line"
+                                    : `terminal-line ${line.tone}`
+                            }
+                        >
+                            {line.text}
                         </div>
                     ))}
+
+                    {statusLine && <div className="terminal-line dim">{statusLine}</div>}
                 </div>
 
                 <div className="terminal-progress-panel">
+                    <div className="progress-label">
+                        <span>Localization progress</span>
+                        <span>{progress}%</span>
+                    </div>
+                    <div className="progress-track">
+                        <div
+                            className="progress-fill"
+                            style={{ "--progress": `${progress}%` } as CSSProperties}
+                        />
+                    </div>
+
                     <div className="target-box">
                         <strong>
                             {selectedObject ? selectedObject.class_name : "No target selected"}

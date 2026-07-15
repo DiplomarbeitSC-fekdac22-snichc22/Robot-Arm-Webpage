@@ -23,24 +23,24 @@ type LogEntry = {
 
 let logEntrySequence = 0;
 
-function nextLogId() {
+const nextLogId = () => {
     logEntrySequence += 1;
     return logEntrySequence;
 }
 
-function timestamp() {
+const timestamp = () => {
     const now = new Date();
     const time = now.toTimeString().slice(0, 8);
     const ms = String(now.getMilliseconds()).padStart(3, "0");
     return `${time}.${ms}`;
 }
 
-function logLine(
+const logLine = (
     level: "INFO" | "DEBUG" | "WARN",
     module: string,
     message: string,
     tone: LogTone = "default"
-): LogEntry {
+): LogEntry => {
     return {
         id: nextLogId(),
         text: `[${timestamp()}] ${level.padEnd(5)} ${module}: ${message}`,
@@ -48,7 +48,7 @@ function logLine(
     };
 }
 
-function createArmCoordinates(object: DetectionObject): ArmCoordinates {
+const createArmCoordinates = (object: DetectionObject): ArmCoordinates => {
     return {
         x: Math.round(object.center.x / 4 + Math.random() * 12),
         y: Math.round(object.center.y / 4 + Math.random() * 12),
@@ -57,7 +57,7 @@ function createArmCoordinates(object: DetectionObject): ArmCoordinates {
     };
 }
 
-function createProgressBar(progress: number) {
+const createProgressBar = (progress: number)=> {
     const total = 32;
     const filled = Math.round((progress / 100) * total);
     const empty = total - filled;
@@ -65,7 +65,7 @@ function createProgressBar(progress: number) {
     return `[${"#".repeat(filled)}${"-".repeat(empty)}]`;
 }
 
-export function MatrixTerminal({ selectedObject }: MatrixTerminalProps) {
+export const MatrixTerminal = ({ selectedObject }: MatrixTerminalProps)=> {
     const [progress, setProgress] = useState(0);
     const [armCoordinates, setArmCoordinates] = useState<ArmCoordinates | null>(null);
     const [logLines, setLogLines] = useState<LogEntry[]>(() => [

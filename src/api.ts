@@ -3,7 +3,7 @@ import type { DetectionObject } from "./types";
 export const BACKEND_URL =
     import.meta.env.VITE_BACKEND_URL || "http://192.168.74.17:8000";
 
-export async function loadObjects(): Promise<DetectionObject[]> {
+export const loadObjects = async (): Promise<DetectionObject[]> => {
     const response = await fetch(`${BACKEND_URL}/objects`);
 
     if (!response.ok) {

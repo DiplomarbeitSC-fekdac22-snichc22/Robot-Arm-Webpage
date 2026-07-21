@@ -702,3 +702,48 @@ button {
     transition-duration: 0.01ms !important;
   }
 }
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  margin: 1rem;
+  padding: 0.85rem 1rem;
+
+  color: #fff;
+  background: rgba(180, 35, 24, 0.95);
+  border: 1px solid #ff6b5f;
+  border-radius: 8px;
+
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.error-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.error-banner strong {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.error-banner span {
+  font-size: 0.95rem;
+}
+
+.error-dismiss {
+  border: 0;
+  padding: 0.2rem 0.5rem;
+
+  color: #fff;
+  background: transparent;
+
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}

@@ -1,7 +1,7 @@
 import type { DetectionObject } from "./types";
 
-export const BACKEND_URL = "http://localhost:8080";
-    import.meta.env.VITE_BACKEND_URL || "http://192.168.74.17:8000";
+export const BACKEND_URL = "http://192.168.74.7:8000";
+    import.meta.env.VITE_BACKEND_URL || "http://192.168.74.7:8000";
 
 interface BackendErrorResponse {
     status?: string;
